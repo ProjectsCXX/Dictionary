@@ -1,5 +1,4 @@
 #include "handleconsoleoperations.h"
-#include <iostream>
 #include <sstream>
 
 enum class CommandType
@@ -29,10 +28,13 @@ static std::map<std::string, CommandType> commandMap = {
     {"quit", CommandType::Quit}
 };
 
-HandleConsoleOperations::HandleConsoleOperations() = default;
+HandleConsoleOperations::HandleConsoleOperations(std::istream& aIstream, std::ostream& aOstream)
+    : mIstream(aIstream)
+    , mOstream(aOstream) {}
+
 HandleConsoleOperations::~HandleConsoleOperations() = default;
 
-void HandleConsoleOperations::Process(std::istream& aIstream)
+void HandleConsoleOperations::Process()
 {
     std::string commandLine;
     std::vector<std::string> args;
@@ -40,8 +42,8 @@ void HandleConsoleOperations::Process(std::istream& aIstream)
 
     while (true)
     {
-        std::cout << ">";
-        std::getline(aIstream, commandLine);
+        mOstream << ">";
+        std::getline(mIstream, commandLine);
         std::stringstream commandLineStream(commandLine);
         while(commandLineStream >> arg)
         {
@@ -56,7 +58,7 @@ void HandleConsoleOperations::Process(std::istream& aIstream)
         }
         if (result == ResultExecuteCommand::Invalid)
         {
-            std::cout << "Invalid input!\nUse 'help' for help\n";
+            mOstream << "Invalid input!\nUse 'help' for help\n";
         }
         args.clear();
     }
@@ -76,13 +78,13 @@ ResultExecuteCommand HandleConsoleOperations::ExecuteInput(const std::vector<std
     {
     case CommandType::Add:
     {
-        if(aArgs.size() != 3)1+
+        if(aArgs.size() != 3)
         {
             return ResultExecuteCommand::Invalid;
         }
         if(const std::string* strold = mEngDir.AddWordTranslate(aArgs[1], aArgs[2]); strold)
         {
-            std::cout << "The translate of '" << aArgs[1] <<
+            mOstream << "The translate of '" << aArgs[1] <<
                 "' already exist - '" << *strold << "'\n";
         }
         return ResultExecuteCommand::Ok;
@@ -94,7 +96,7 @@ ResultExecuteCommand HandleConsoleOperations::ExecuteInput(const std::vector<std
         }
         if(!mEngDir.DeleteWordTranslate(aArgs[1]))
         {
-            std::cout << "The word '" << aArgs[1] << "' is not in the dictionary\n";
+            mOstream << "The word '" << aArgs[1] << "' is not in the dictionary\n";
         }
         return ResultExecuteCommand::Ok;
 
@@ -107,11 +109,11 @@ ResultExecuteCommand HandleConsoleOperations::ExecuteInput(const std::vector<std
         const std::string* translate = mEngDir.FindTranslate(aArgs[1]);
         if (!translate)
         {
-            std::cout << "The word '" << aArgs[1] << "' is not in the dictionary\n";
+            mOstream << "The word '" << aArgs[1] << "' is not in the dictionary\n";
         }
         else
         {
-            std::cout << *translate << "\n";
+            mOstream << *translate << "\n";
         }
         return ResultExecuteCommand::Ok;
     }
@@ -125,11 +127,11 @@ ResultExecuteCommand HandleConsoleOperations::ExecuteInput(const std::vector<std
         std::map<std::string, std::string> dict = mEngDir.GetDictionary();
         if(dict.empty())
         {
-            std::cout << "The dictionary is empty\n";
+            mOstream << "The dictionary is empty\n";
         }
         for(const auto& item : dict)
         {
-            std::cout << item.first << " " << item.second << "\n";
+            mOstream << item.first << " " << item.second << "\n";
         }
         return ResultExecuteCommand::Ok;
     }
@@ -144,7 +146,7 @@ ResultExecuteCommand HandleConsoleOperations::ExecuteInput(const std::vector<std
                            "Enter 'help' for help\n"
                            "Enter 'quit' for quit\n"
                            "\n---------------------------------------------------------------------\n";
-        std::cout << help;
+        mOstream << help;
         return ResultExecuteCommand::Ok;
     }
 

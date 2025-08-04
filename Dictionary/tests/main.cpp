@@ -3,7 +3,7 @@
 
 int main()
 {
-    HandleConsoleOperations console;
-    console.Process(std::cin);
+    HandleConsoleOperations console(std::cin, std::cout);
+    console.Process();
     return 0;
 }

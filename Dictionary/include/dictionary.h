@@ -2,13 +2,13 @@
 #include <map>
 #include <string>
 
-class EnglishDictionary
+class Dictionary
 {
 private:
     std::map<std::string, std::string> mDictionary{};
 public:
-    EnglishDictionary();
-    ~EnglishDictionary();
+    Dictionary();
+    ~Dictionary();
 
     const std::string* FindTranslate(const std::string& aWord) const;
     const std::string* AddWordTranslate(std::string aWord, std::string aTranslate);

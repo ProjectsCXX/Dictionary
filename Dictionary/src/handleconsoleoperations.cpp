@@ -1,5 +1,6 @@
 #include "handleconsoleoperations.h"
 #include <sstream>
+#include <algorithm>
 
 enum class CommandType
 {
@@ -28,8 +29,19 @@ static std::map<std::string, CommandType> commandMap = {
     {"quit", CommandType::Quit}
 };
 
+void HandleConsoleOperations::PrintSetTranslate(const std::set<std::string>& aTranslates) const
+{
+    mOstream << "{ " << *aTranslates.begin();
+    std::for_each(std::next(aTranslates.begin()), aTranslates.end(), [&](const std::string& element)
+                  {
+                      mOstream << ", " << element;
+                  });
+    mOstream << " }";
+}
+
 HandleConsoleOperations::HandleConsoleOperations(std::istream& aIstream, std::ostream& aOstream)
-    : mIstream(aIstream)
+    : mEngDir()
+    , mIstream(aIstream)
     , mOstream(aOstream) {}
 
 HandleConsoleOperations::~HandleConsoleOperations() = default;
@@ -82,21 +94,32 @@ ResultExecuteCommand HandleConsoleOperations::ExecuteInput(const std::vector<std
         {
             return ResultExecuteCommand::Invalid;
         }
-        if(const std::string* strold = mEngDir.AddWordTranslate(aArgs[1], aArgs[2]); strold)
-        {
-            mOstream << "The translate of '" << aArgs[1] <<
-                "' already exist - '" << *strold << "'\n";
-        }
+        mEngDir.AddWordTranslate(aArgs[1], aArgs[2]);
+        // if(const std::string* strold = mEngDir.AddWordTranslate(aArgs[1], aArgs[2]); strold)
+        // {
+        //     mOstream << "The translate of '" << aArgs[1] <<
+        //         "' already exist - '" << *strold << "'\n";
+        // }
         return ResultExecuteCommand::Ok;
     }
     case CommandType::Delete:
-        if(aArgs.size() != 2)
+        if(aArgs.size() == 2)
+        {
+            if(!mEngDir.DeleteWordTranslate(aArgs[1]))
+            {
+                mOstream << "The word '" << aArgs[1] << "' is not in the dictionary\n";
+            }
+        }
+        else if(aArgs.size() == 3)
+        {
+            if(!mEngDir.DeleteWordTranslate(aArgs[1], aArgs[2]))
+            {
+                mOstream << "The translate '" << aArgs[2] << "' of the word '" << aArgs[1] << "' is not in the dictionary\n";
+            }
+        }
+        else
         {
             return ResultExecuteCommand::Invalid;
-        }
-        if(!mEngDir.DeleteWordTranslate(aArgs[1]))
-        {
-            mOstream << "The word '" << aArgs[1] << "' is not in the dictionary\n";
         }
         return ResultExecuteCommand::Ok;
 
@@ -106,14 +129,15 @@ ResultExecuteCommand HandleConsoleOperations::ExecuteInput(const std::vector<std
         {
             return ResultExecuteCommand::Invalid;
         }
-        const std::string* translate = mEngDir.FindTranslate(aArgs[1]);
+        const std::set<std::string>* translate = mEngDir.FindTranslate(aArgs[1]);
         if (!translate)
         {
             mOstream << "The word '" << aArgs[1] << "' is not in the dictionary\n";
         }
         else
         {
-            mOstream << *translate << "\n";
+            PrintSetTranslate(*translate);
+            // mOstream << *translate << "\n";
         }
         return ResultExecuteCommand::Ok;
     }
@@ -124,14 +148,16 @@ ResultExecuteCommand HandleConsoleOperations::ExecuteInput(const std::vector<std
         {
             return ResultExecuteCommand::Invalid;
         }
-        std::map<std::string, std::string> dict = mEngDir.GetDictionary();
+        std::map<std::string, std::set<std::string>> dict = mEngDir.GetDictionary();
         if(dict.empty())
         {
             mOstream << "The dictionary is empty\n";
         }
         for(const auto& item : dict)
         {
-            mOstream << item.first << " " << item.second << "\n";
+            mOstream/*.width(10)*/ << item.first << " -- ";
+            PrintSetTranslate(item.second);
+            mOstream << "\n";
         }
         return ResultExecuteCommand::Ok;
     }
@@ -140,6 +166,7 @@ ResultExecuteCommand HandleConsoleOperations::ExecuteInput(const std::vector<std
         const char* help = "\n---------------------------------------------------------------------\n"
                            "\n"
                            "Enter 'add <word> <translate>' for add word to dictionary\n"
+                           "Enter 'delete <word> <translate>' for delete translate of the word\n"
                            "Enter 'delete <word>' for delete word from dictionary\n"
                            "Enter 'find <word>' for find translate of word\n"
                            "Enter 'list' for get all dictionary\n"

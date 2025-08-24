@@ -1,17 +1,20 @@
 #pragma once
 #include <map>
 #include <string>
+#include <set>
 
 class Dictionary
 {
 private:
-    std::map<std::string, std::string> mDictionary{};
+    std::map<std::string, std::set<std::string>> mDictionary{};
+
 public:
     Dictionary();
     ~Dictionary();
 
-    const std::string* FindTranslate(const std::string& aWord) const;
-    const std::string* AddWordTranslate(std::string aWord, std::string aTranslate);
+    const std::set<std::string>* FindTranslate(const std::string& aWord) const;
+    void AddWordTranslate(std::string aWord, std::string aTranslate);
     bool DeleteWordTranslate(const std::string& aWord);
-    const std::map<std::string, std::string>& GetDictionary() const;
+    bool DeleteWordTranslate(const std::string& aWord, std::string aTranslate);
+    const std::map<std::string, std::set<std::string>>& GetDictionary() const;
 };
